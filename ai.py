@@ -1,5 +1,6 @@
 import time 
 import requests
+import copy
 
 from configs import LLM_DOMAIN, logger
 
@@ -41,21 +42,25 @@ class LLM():
             llm_model = ''
         return llm_model
     
-    def get_result_from_llm(self, prompt):
-        llm_url = LLM_DOMAIN + '/v1/chat/completions'
+def get_result_from_llm(self, prompt, history):
+    llm_url = LLM_DOMAIN + '/v1/chat/completions'
+    if history:
+        messages = copy.deepcopy(history)
+        messages.append({'role': 'user', 'content': prompt})
+    else:
         messages = [
             {'role': 'system', 'content': 'You are a helpful assistant.'},
             {'role': 'user', 'content': prompt}
         ]
-        if self.model:
-            data = {'model': self.model, 'messages': messages}
-            result = self.get_base_result_from_llm(llm_url, method='POST', data=data)
-            if result:
-                try:
-                    result = result['choices'][0]['message']['content']
-                except Exception as e:
-                    self.logger.error(e)
-                    result = ''
-        else:
-            result = ''
-        return result
+    if self.model:
+        data = {'model': self.model, 'messages': messages}
+        result = self.get_base_result_from_llm(llm_url, method='POST', data=data)
+        if result:
+            try:
+                result = result['choices'][0]['message']['content']
+            except Exception as e:
+                self.logger.error(e)
+                result = ''
+    else:
+        result = ''
+    return result
